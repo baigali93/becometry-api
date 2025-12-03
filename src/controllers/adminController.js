@@ -6,6 +6,17 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const path = require('path');
 
+// Helper function to create slug from name
+function createSlug(name) {
+  return name
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 const adminController = {
   /**
    * GET /api/admin/tags/analyze
@@ -683,7 +694,7 @@ const adminController = {
 
   async createCategory(req, res) {
     try {
-      const { name } = req.body;
+      const { name, slug } = req.body;
 
       if (!name) {
         return res.status(400).json({
@@ -692,9 +703,12 @@ const adminController = {
         });
       }
 
+      // Generate slug if not provided
+      const categorySlug = slug || createSlug(name);
+
       const result = await pool.query(
-        'INSERT INTO categories (name) VALUES ($1) RETURNING *',
-        [name]
+        'INSERT INTO categories (name, slug) VALUES ($1, $2) RETURNING *',
+        [name, categorySlug]
       );
 
       res.json({
@@ -714,7 +728,7 @@ const adminController = {
   async updateCategory(req, res) {
     try {
       const { id } = req.params;
-      const { name } = req.body;
+      const { name, slug } = req.body;
 
       if (!name) {
         return res.status(400).json({
@@ -723,9 +737,12 @@ const adminController = {
         });
       }
 
+      // Generate slug if not provided
+      const categorySlug = slug || createSlug(name);
+
       const result = await pool.query(
-        'UPDATE categories SET name = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
-        [name, id]
+        'UPDATE categories SET name = $1, slug = $2 WHERE id = $3 RETURNING *',
+        [name, categorySlug, id]
       );
 
       if (result.rows.length === 0) {
@@ -837,7 +854,7 @@ const adminController = {
 
   async createSubcategory(req, res) {
     try {
-      const { name, category_id } = req.body;
+      const { name, category_id, slug } = req.body;
 
       if (!name || !category_id) {
         return res.status(400).json({
@@ -846,9 +863,12 @@ const adminController = {
         });
       }
 
+      // Generate slug if not provided
+      const subcategorySlug = slug || createSlug(name);
+
       const result = await pool.query(
-        'INSERT INTO subcategories (name, category_id) VALUES ($1, $2) RETURNING *',
-        [name, category_id]
+        'INSERT INTO subcategories (name, category_id, slug) VALUES ($1, $2, $3) RETURNING *',
+        [name, category_id, subcategorySlug]
       );
 
       res.json({
@@ -868,7 +888,7 @@ const adminController = {
   async updateSubcategory(req, res) {
     try {
       const { id } = req.params;
-      const { name, category_id } = req.body;
+      const { name, category_id, slug } = req.body;
 
       if (!name) {
         return res.status(400).json({
@@ -877,9 +897,12 @@ const adminController = {
         });
       }
 
+      // Generate slug if not provided
+      const subcategorySlug = slug || createSlug(name);
+
       const result = await pool.query(
-        'UPDATE subcategories SET name = $1, category_id = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
-        [name, category_id, id]
+        'UPDATE subcategories SET name = $1, category_id = $2, slug = $3 WHERE id = $4 RETURNING *',
+        [name, category_id, subcategorySlug, id]
       );
 
       if (result.rows.length === 0) {
